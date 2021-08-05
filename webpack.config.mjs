@@ -26,7 +26,19 @@ const config = {
       // CSS and SASS
       {
         test: /\.s?a?c?ss$/i,
-        use: ['style-loader', 'css-loader', 'sass-loader'],
+        use: [
+          'style-loader',
+          'css-loader',
+          {
+            loader: 'postcss-loader',
+            options: {
+              postcssOptions: {
+                plugins: ['postcss-preset-env'],
+              },
+            },
+          },
+          'sass-loader',
+        ],
       },
 
       // Images
@@ -72,18 +84,19 @@ if (task === 'build') {
 
   config.module.rules[1].use[0] = MiniCssExtractPlugin.loader;
 
-  config.module.rules[1].use[2] = {
-    loader: 'postcss-loader',
-    options: {
-      postcssOptions: {
-        plugins: ['postcss-preset-env'],
-      },
-    },
-  };
-
   config.plugins = [
     ...config.plugins,
-    new MiniCssExtractPlugin({ filename: './assets/css/[name].styles.[fullhash].css' }),
+    new MiniCssExtractPlugin({
+      filename: './assets/css/[name].styles.[fullhash].css',
+      insert: (linkTag) => {
+        const preloadLinkTag = document.createElement('link');
+        preloadLinkTag.rel = 'preload';
+        preloadLinkTag.as = 'style';
+        preloadLinkTag.href = linkTag.href;
+        document.head.appendChild(preloadLinkTag);
+        document.head.appendChild(linkTag);
+      },
+    }),
   ];
 }
 
